@@ -23,6 +23,7 @@ $noteid = required_param('id', PARAM_INT);
 $PAGE->set_url('/notes/delete.php', array('id' => $noteid));
 
 if (!$note = note_load($noteid)) {
+    echo "Hi";
     throw new \moodle_exception('invalidid');
 }
 
