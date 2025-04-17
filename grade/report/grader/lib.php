@@ -550,8 +550,11 @@ class grade_report_grader extends grade_report {
         } else {
             $maxgradesperpage = self::MAX_GRADES_PER_PAGE;
         }
-
-        return round($maxgradesperpage / count($this->get_allgradeitems()));
+        if (count($this->get_allgradeitems()) == 0) {
+            return $maxgradesperpage;
+        } else {
+            return round($maxgradesperpage / count($this->get_allgradeitems()));
+        }
     }
 
     /**
@@ -1309,10 +1312,15 @@ class grade_report_grader extends grade_report {
 
         // Extract rows from each side (left and right) and collate them into one row each
         foreach ($leftrows as $key => $row) {
-            $row->cells = array_merge($row->cells, $rightrows[$key]->cells);
-            $fulltable->data[] = $row;
-            unset($leftrows[$key]);
-            unset($rightrows[$key]);
+            if (isset($rightrows[$key])) {
+                $row->cells = array_merge($row->cells, $rightrows[$key]->cells);
+                $fulltable->data[] = $row;
+                unset($leftrows[$key]);
+                unset($rightrows[$key]);
+            } else { // Right row is not set - this is the case of the left side
+                $fulltable->data[] = $row;
+                unset($leftrows[$key]);
+            }
         }
         $html .= html_writer::table($fulltable);
         return $OUTPUT->container($html, 'gradeparent');
