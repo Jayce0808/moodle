@@ -676,7 +676,9 @@ class grade_report_grader extends grade_report {
         $fillercell->colspan = $colspan;
         $fillercell->rowspan = $levels;
         $row = new html_table_row(array($fillercell));
-        $rows[] = $row;
+        if ($levels >= 1) { // Do not display the filler cell if there are no levels as there will be nothing else in the row.
+            $rows[] = $row;
+        }
 
         for ($i = 1; $i < $levels; $i++) {
             $row = new html_table_row();
@@ -697,7 +699,6 @@ class grade_report_grader extends grade_report {
         $element = ['type' => 'userfield', 'name' => 'fullname'];
         $studentheader->text = $arrows['studentname'] .
             $this->gtree->get_cell_action_menu($element, 'gradeitem', $this->gpr, $this->baseurl);
-
         $headerrow->cells[] = $studentheader;
 
         foreach ($extrafields as $field) {
