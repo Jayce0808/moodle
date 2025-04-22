@@ -1318,7 +1318,7 @@ class grade_report_grader extends grade_report {
                 $fulltable->data[] = $row;
                 unset($leftrows[$key]);
                 unset($rightrows[$key]);
-            } else { // Right row is not set - this is the case of the left side
+            } else { // Right row is not set - this is the case of the left side.
                 $fulltable->data[] = $row;
                 unset($leftrows[$key]);
             }
