@@ -90,7 +90,7 @@ class text_filter extends \core_filters\text_filter {
         foreach ($allconcepts as $concepts) {
             foreach ($concepts as $concept) {
                 $conceptlist[] = new filter_object(
-                    format_string($concept->concept, true, ['context' => $this->context]),
+                    format_string($concept->concept, true, ['context' => $this->context, 'filter' => false]),
                     null,
                     null,
                     $concept->casesensitive,
@@ -147,8 +147,8 @@ class text_filter extends \core_filters\text_filter {
                 'glossaryconcept',
                 'filter_glossary',
                 ['glossary' => replace_ampersands_not_followed_by_entity(strip_tags(format_string($glossaries[$concept->glossaryid],
-                    true, ['context' => $this->context]))),
-                    'concept' => format_string($concept->concept, true, ['context' => $this->context])]
+                    true, ['context' => $this->context, 'filter' => false]))),
+                    'concept' => format_string($concept->concept, true, ['context' => $this->context, 'filter' => false])]
             );
             // Hardcoding dictionary format in the URL rather than defaulting
             // to the current glossary format which may not work in a popup.
