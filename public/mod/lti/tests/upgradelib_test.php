@@ -358,8 +358,20 @@ final class upgradelib_test extends \advanced_testcase {
             'tooldomain' => 'example.com',
             'baseurl' => 'https://example.com/launch',
             'coursevisible' => lti_migration_upgrade_helper::LEGACY_LTI_COURSEVISIBLE_ACTIVITYCHOOSER,
+            'state' => \core_ltix\constants::LTI_TOOL_STATE_CONFIGURED,
             'lti_contentitem' => 1,
         ]);
+
+        $placementtypeid = $DB->get_field('lti_placement_type', 'id', ['type' => 'mod_lti:activityplacement']);
+
+        // Create a placement for tool1.
+        $ltigenerator->create_tool_placements([
+            'toolid' => $tool1id,
+            'placementtypeid' => $placementtypeid,
+            'config_default_usage' => 'enabled',
+            'config_supports_deep_linking' => 0,
+        ]);
+
         // A link created using tool1 in course 1.
         $tool1instance1 = $ltigenerator->create_instance([
             'course' => $course1->id,
@@ -378,9 +390,19 @@ final class upgradelib_test extends \advanced_testcase {
             'tooldomain' => 'example2.com',
             'baseurl' => 'https://example2.com/launch',
             'coursevisible' => lti_migration_upgrade_helper::LEGACY_LTI_COURSEVISIBLE_ACTIVITYCHOOSER,
+            'state' => \core_ltix\constants::LTI_TOOL_STATE_CONFIGURED,
             'lti_contentitem' => 1,
-            'course' => $course1->id,
+            'course' => $course2->id,
         ]);
+
+        // Create a placement for tool2.
+        $ltigenerator->create_tool_placements([
+            'toolid' => $tool2id,
+            'placementtypeid' => $placementtypeid,
+            'config_default_usage' => 'enabled',
+            'config_supports_deep_linking' => 0,
+        ]);
+
         // A link created using tool2 in course 2.
         $tool2instance = $ltigenerator->create_instance([
             'course' => $course2->id,
