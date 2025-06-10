@@ -204,8 +204,9 @@ abstract class component_gradeitem {
      * @return bool
      */
     public function is_using_advanced_grading(): bool {
-        if ($this->is_using_scale()) {
-            return false;
+        // If there's an advanced grading method set, we are using advanced grading.
+        if (!empty($this->get_advanced_grading_method())) {
+            return true;
         }
 
         if ($this->get_advanced_grading_controller()) {
