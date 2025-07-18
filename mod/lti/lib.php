@@ -140,7 +140,7 @@ function lti_add_instance($lti, $mform) {
         'contextid' => \core\context\module::instance($lti->coursemodule)->id,
         'url' => $lti->toolurl,
         'title' => $lti->name,
-        'text' => $lti->intro,
+        'text' => lti_generate_plaintext_intro($lti->intro),
         'textformat' => $lti->introformat,
         'gradable' => $lti->instructorchoiceacceptgrades,
         'servicesalt' => $lti->servicesalt,
@@ -219,7 +219,7 @@ function lti_update_instance($lti, $mform) {
         'contextid' => \core\context\module::instance($lti->coursemodule)->id,
         'url' => $lti->toolurl,
         'title' => $lti->name,
-        'text' => $lti->intro,
+        'text' => lti_generate_plaintext_intro($lti->intro),
         'textformat' => $lti->introformat,
         'gradable' => $lti->instructorchoiceacceptgrades,
         ...(!isset($lti->launchcontainer) ? ['launchcontainer' => $lti->launchcontainer] : []),
@@ -234,6 +234,18 @@ function lti_update_instance($lti, $mform) {
 
     return $DB->update_record('lti', $lti);
 }
+
+/**
+ * Generate a plaintext introduction for the LTI instance.
+ *
+ * @param stdClass $lti The LTI instance object.
+ * @return string The plaintext introduction.
+ */
+function lti_generate_plaintext_intro($intro): string {
+    $intro = trim(html_to_text(html_entity_decode($intro), 0, false));
+    return str_replace("\n", "\r\n", $intro);
+}
+
 
 /**
  * Given an ID of an instance of this module,
