@@ -427,7 +427,9 @@ class factory {
             } else {
                 // Load all the known definitions and find the desired one.
                 $instance = $this->create_config_instance();
-                $definition = $instance->get_definition_by_id($id);
+                if ($instance) {
+                    $definition = $instance->get_definition_by_id($id);
+                }
                 if (!$definition) {
                     // Oh-oh the definition doesn't exist.
                     // There are several things that could be going on here.
