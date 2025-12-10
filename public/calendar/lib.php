@@ -2005,10 +2005,20 @@ function calendar_show_event_type($type, $user = null) {
 
     if ((int)get_user_preferences('calendar_persistflt', 0, $user) === 0) {
         global $SESSION;
-        if (!isset($SESSION->calendarshoweventtype)) {
-            $SESSION->calendarshoweventtype = $default;
+        // If the session value already exists, always use it.
+        if (isset($SESSION->calendarshoweventtype)) {
+            $preference = $SESSION->calendarshoweventtype;
+        } else {
+            $preference = $default;
+
+            // Only write to the session if we are not in a read-only session.
+            if (!defined('READ_ONLY_SESSION')) {
+                $SESSION->calendarshoweventtype = $default;
+            }
         }
-        return $SESSION->calendarshoweventtype & $type;
+
+        return (bool) ($preference & $type);
+
     } else {
         return get_user_preferences('calendar_savedflt', $default, $user) & $type;
     }
@@ -2031,10 +2041,16 @@ function calendar_set_event_type_display($type, $display = null, $user = null) {
             + CALENDAR_EVENT_USER + CALENDAR_EVENT_COURSECAT;
     if ($persist === 0) {
         global $SESSION;
-        if (!isset($SESSION->calendarshoweventtype)) {
-            $SESSION->calendarshoweventtype = $default;
+        if (isset($SESSION->calendarshoweventtype)) {
+            $preference = $SESSION->calendarshoweventtype;
+        } else {
+            $preference = $default;
+
+            // Only initialise in session if not read-only.
+            if (!defined('READ_ONLY_SESSION')) {
+                $SESSION->calendarshoweventtype = $default;
+            }
         }
-        $preference = $SESSION->calendarshoweventtype;
     } else {
         $preference = get_user_preferences('calendar_savedflt', $default, $user);
     }
@@ -2048,7 +2064,10 @@ function calendar_set_event_type_display($type, $display = null, $user = null) {
         $preference -= $type;
     }
     if ($persist === 0) {
-        $SESSION->calendarshoweventtype = $preference;
+        // Only write back to the session if not read-only.
+        if (!defined('READ_ONLY_SESSION')) {
+            $SESSION->calendarshoweventtype = $preference;
+        }
     } else {
         if ($preference == $default) {
             unset_user_preference('calendar_savedflt', $user);
