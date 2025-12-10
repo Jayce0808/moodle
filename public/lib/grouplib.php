@@ -931,16 +931,24 @@ function groups_allgroups_course_menu($course, $urlroot, $update = false, $activ
 
     if ($update) {
         // Init activegroup array if necessary.
-        if (!isset($SESSION->activegroup)) {
-            $SESSION->activegroup = array();
-        }
-        if (!isset($SESSION->activegroup[$course->id])) {
-            $SESSION->activegroup[$course->id] = array(SEPARATEGROUPS => array(), VISIBLEGROUPS => array(), 'aag' => array());
-        }
         if (empty($groupsmenu[$activegroup])) {
             $activegroup = key($groupsmenu); // Force set to one of accessible groups.
         }
-        $SESSION->activegroup[$course->id][$groupmode][$course->defaultgroupingid] = $activegroup;
+        // In read-only sessions we must not modify the session state.
+        if (!defined('READ_ONLY_SESSION')) {
+            // Init activegroup array if necessary.
+            if (!isset($SESSION->activegroup)) {
+                $SESSION->activegroup = array();
+            }
+            if (!isset($SESSION->activegroup[$course->id])) {
+                $SESSION->activegroup[$course->id] = array(
+                    SEPARATEGROUPS => array(),
+                    VISIBLEGROUPS => array(),
+                    'aag' => array()
+                );
+            }
+            $SESSION->activegroup[$course->id][$groupmode][$course->defaultgroupingid] = $activegroup;
+        }
     }
 
     $grouplabel = get_string('groups');
