@@ -656,6 +656,28 @@ function enable_cli_maintenance_mode() {
     chmod("$CFG->dataroot/climaintenance.html", $CFG->filepermissions);
 }
 
+/**
+ * Return the confirmation text used for user deletion confirmations.
+ *
+ * Plugins may provide the text via the core\hook\admin\user_deletion_confirmation_text hook.
+ *
+ * @return string confirmation text (HTML)
+ */
+function admin_get_user_deletion_confirmation_text(): string {
+    $helpurl = (new moodle_url(get_docs_url('Data_privacy')))->out(false);
+    $hook = new \core\hook\admin\user_deletion_confirmation_text($helpurl);
+    \core\di::get(\core\hook\manager::class)->dispatch($hook);
+
+    $text = get_string('deletecheckfull', 'moodle');
+    foreach ($hook->get_additions() as $addition) {
+        if ($addition !== '') {
+            $text .= $addition;
+        }
+    }
+
+    return $text;
+}
+
 /// CLASS DEFINITIONS /////////////////////////////////////////////////////////
 
 
