@@ -408,7 +408,11 @@ class qtype_essay_format_editor_renderer extends qtype_essay_format_renderer_bas
      */
     protected function get_editor_options($context) {
         // Disable the text-editor autosave because quiz has it's own auto save function.
-        return array('context' => $context, 'autosave' => false);
+        $options = ['context' => $context, 'autosave' => false];
+        if (isset($this->displayoptions) && !($this->displayoptions->allowpaste ?? true)) {
+            $options['allowpaste'] = false;
+        }
+        return $options;
     }
 
     /**

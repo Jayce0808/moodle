@@ -1,0 +1,10 @@
+issueNumber: MDL-82032
+notes:
+  mod_quiz:
+    - message: >-
+        A new `$allowpaste` property has been added to
+        `mod_quiz\question\display_options`. When `false`, editors rendered
+        during a quiz attempt will have paste disabled. It defaults to `true`
+        and is set to `false` automatically for JavaScript security mode
+        (`securewindow`).
+      type: improved

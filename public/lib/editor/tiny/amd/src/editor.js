@@ -456,6 +456,25 @@ const getEditorConfiguration = (target, tinyMCE, options, pluginValues) => {
     // Next we convert the plugin configuration into a format that TinyMCE understands.
     Object.assign(instanceConfig, Options.getInitialPluginConfiguration(options));
 
+    if (options && options.allowpaste === false) {
+        // Disable the context menu to prevent paste via right-click.
+        instanceConfig.contextmenu = false;
+        // eslint-disable-next-line camelcase
+        instanceConfig.contextmenu_never_use_native = true;
+        // eslint-disable-next-line camelcase
+        instanceConfig.paste_preprocess = (_plugin, args) => {
+            if (args.stopImmediatePropagation) {
+                args.stopImmediatePropagation();
+            }
+            if (args.stopPropagation) {
+                args.stopPropagation();
+            }
+            if (args.preventDefault) {
+                args.preventDefault();
+            }
+        };
+    }
+
     return instanceConfig;
 };
 

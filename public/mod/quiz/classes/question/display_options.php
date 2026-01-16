@@ -60,6 +60,13 @@ class display_options extends \question_display_options {
     public $overallfeedback = self::VISIBLE;
 
     /**
+     * @var bool whether paste is permitted in editors during this attempt.
+     * Set to false for JavaScript security mode (securewindow) only.
+     * @since Moodle 5.3
+     */
+    public bool $allowpaste = true;
+
+    /**
      * Set up the various options from the quiz settings, and a time constant.
      *
      * @param \stdClass $quiz the quiz settings from the database.
@@ -87,6 +94,8 @@ class display_options extends \question_display_options {
         } else {
             $options->markdp = $quiz->decimalpoints;
         }
+
+        $options->allowpaste = !isset($quiz->browsersecurity) || $quiz->browsersecurity !== 'securewindow';
 
         return $options;
     }
