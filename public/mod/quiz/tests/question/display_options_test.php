@@ -85,4 +85,37 @@ final class display_options_test extends \basic_testcase {
         $this->assertEquals(display_options::VISIBLE, $options->overallfeedback);
         $this->assertEquals(display_options::HIDDEN, $options->rightanswer);
     }
+
+    public function test_allowpaste_securewindow(): void {
+        $quiz = new \stdClass();
+        $quiz->decimalpoints = 2;
+        $quiz->questiondecimalpoints = -1;
+        $quiz->reviewattempt          = 0x10000;
+        $quiz->reviewcorrectness      = 0x10000;
+        $quiz->reviewmaxmarks         = 0x10000;
+        $quiz->reviewmarks            = 0x10000;
+        $quiz->reviewspecificfeedback = 0x10000;
+        $quiz->reviewgeneralfeedback  = 0x10000;
+        $quiz->reviewrightanswer      = 0x10000;
+        $quiz->reviewoverallfeedback  = 0x10000;
+
+        // No browsersecurity set: paste should be allowed.
+        $options = display_options::make_from_quiz($quiz, display_options::DURING);
+        $this->assertTrue($options->allowpaste);
+
+        // Browsersecurity = 'none': paste should be allowed.
+        $quiz->browsersecurity = 'none';
+        $options = display_options::make_from_quiz($quiz, display_options::DURING);
+        $this->assertTrue($options->allowpaste);
+
+        // Browsersecurity = 'securewindow' (JS security mode): paste should not be allowed.
+        $quiz->browsersecurity = 'securewindow';
+        $options = display_options::make_from_quiz($quiz, display_options::DURING);
+        $this->assertFalse($options->allowpaste);
+
+        // Any other browsersecurity value should allow paste.
+        $quiz->browsersecurity = 'other';
+        $options = display_options::make_from_quiz($quiz, display_options::DURING);
+        $this->assertTrue($options->allowpaste);
+    }
 }
