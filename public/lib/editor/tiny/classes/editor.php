@@ -200,6 +200,10 @@ class editor extends \texteditor {
             'plugins' => $this->manager->get_plugin_configuration($context, $options, $fpoptions, $this),
         ];
 
+        if (isset($options['allowpaste'])) {
+            $config->allowpaste = (bool) $options['allowpaste'];
+        }
+
         if (defined('BEHAT_SITE_RUNNING') && BEHAT_SITE_RUNNING) {
             // Add sample selectors for Behat test.
             $config->placeholderSelectors = ['.behat-tinymce-placeholder'];
