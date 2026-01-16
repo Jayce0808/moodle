@@ -1,0 +1,9 @@
+issueNumber: MDL-82032
+notes:
+  editor_tiny:
+    - message: >-
+        A new `allowpaste` option is available in the TinyMCE editor
+        configuration. When set to `false`, it prevents users from pasting
+        content into the editor and also disables the context menu. This can
+        be passed via the `$options` array when calling the editor.
+      type: improved
