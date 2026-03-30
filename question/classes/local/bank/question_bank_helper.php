@@ -265,11 +265,15 @@ class question_bank_helper {
         // Build the left joins for all modules of the type requested i.e. those that do or do not share questions.
         $pluginjoins = [];
         $pluginfields = [];
+        $excludepreviewsql = '';
         foreach ($plugins as $key => $plugin) {
             $join = "LEFT JOIN {{$plugin}} p{$key} ON p{$key}.id = cm.instance
                      AND m.name = '{$plugin}'";
             if ($plugin === self::get_default_question_bank_activity_name()) {
                 $join .= " AND p{$key}.type <> '" . self::TYPE_PREVIEW . "'";
+                // The type check in the ON clause above causes the join to fail for preview banks, leaving p{$key}.id NULL.
+                // This WHERE condition then uses that NULL to exclude those rows from the results.
+                $excludepreviewsql = " AND (m.name <> '{$plugin}' OR p{$key}.id IS NOT NULL)";
             }
             $pluginjoins[] = $join;
             $pluginfields[] = "p{$key}.name";
@@ -325,7 +329,7 @@ class question_bank_helper {
                 {$pluginjoinsql}
                 {$contextsql}
                 {$catsql}
-                WHERE 1=1 {$wheremodulesql} {$notincoursesql} {$incoursesql} {$searchsql}
+                WHERE 1=1 {$wheremodulesql} {$notincoursesql} {$incoursesql} {$searchsql} {$excludepreviewsql}
                 GROUP BY cm.id, cm.course {$contextgroupby}
                 {$orderbysql}";
 
