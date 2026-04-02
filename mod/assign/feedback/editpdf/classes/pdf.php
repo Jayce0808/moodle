@@ -74,6 +74,8 @@ class pdf extends Fpdi {
     const MIN_ANNOTATION_HEIGHT = 5;
     /** Blank PDF file used during error. */
     const BLANK_PDF = '/mod/assign/feedback/editpdf/fixtures/blank.pdf';
+    /** Exit code returned by GNU timeout (coreutils) when the child process is killed. */
+    const GS_TIMEOUT_EXIT_CODE = 124;
     /** Page image file name prefix*/
     const IMAGE_PAGE = 'image_page';
     /**
@@ -548,7 +550,13 @@ class pdf extends Fpdi {
 
         $imagefile = $this->imagefolder . '/' . self::IMAGE_PAGE;
         $command = $this->get_command_for_image(-1, $imagefile);
-        exec($command);
+        $exitcode = 0;
+        exec($command, $unusedoutput, $exitcode);
+        if ($exitcode === self::GS_TIMEOUT_EXIT_CODE) {
+            $timeoutseconds = (int)get_config('assignfeedback_editpdf', 'gs_timeout');
+            throw new \moodle_exception('errorgstimeout', 'assignfeedback_editpdf', '',
+                (object)['file' => $this->filename, 'timeout' => $timeoutseconds]);
+        }
         $images = array();
         for ($i = 0; $i < $this->pagecount; $i++) {
             // Image file is created from 1, so need to change to 0.
@@ -592,9 +600,15 @@ class pdf extends Fpdi {
 
         if ($generate) {
             $command = $this->get_command_for_image($pageno, $imagefile);
-            $output = null;
-            $result = exec($command, $output);
+            $output = [];
+            $exitcode = 0;
+            $result = exec($command, $output, $exitcode);
             if (!file_exists($imagefile)) {
+                if ($exitcode === self::GS_TIMEOUT_EXIT_CODE) {
+                    $timeoutseconds = (int)get_config('assignfeedback_editpdf', 'gs_timeout');
+                    throw new \moodle_exception('errorgstimeout', 'assignfeedback_editpdf', '',
+                        (object)['file' => $this->filename, 'timeout' => $timeoutseconds]);
+                }
                 $fullerror = '<pre>'.get_string('command', 'assignfeedback_editpdf')."\n";
                 $fullerror .= $command . "\n\n";
                 $fullerror .= get_string('result', 'assignfeedback_editpdf')."\n";
@@ -699,8 +713,10 @@ class pdf extends Fpdi {
             $firstpage = 1;
             $lastpage = $this->pagecount;
         }
-        return "$gsexec -q -sDEVICE=png16m -dSAFER -dBATCH -dNOPAUSE -r$imageres -dFirstPage=$firstpage -dLastPage=$lastpage ".
-            "-dDOINTERPOLATE -dGraphicsAlphaBits=4 -dTextAlphaBits=4 -sOutputFile=$imagefilearg $filename";
+        $timeoutseconds = (int)get_config('assignfeedback_editpdf', 'gs_timeout');
+        $timeoutprefix = self::get_timeout_prefix($timeoutseconds);
+        return "{$timeoutprefix}{$gsexec} -q -sDEVICE=png16m -dSAFER -dBATCH -dNOPAUSE -r$imageres -dFirstPage=$firstpage -dLastPage=$lastpage ".
+            "-dGraphicsAlphaBits=4 -dTextAlphaBits=4 -sOutputFile=$imagefilearg $filename";
     }
 
     /**
@@ -735,10 +751,13 @@ class pdf extends Fpdi {
         $gsexec = \escapeshellarg($CFG->pathtogs);
         $tempdstarg = \escapeshellarg($tempdst);
         $tempsrcarg = \escapeshellarg($tempsrc);
-        $command = "$gsexec -q -sDEVICE=pdfwrite -dPreserveAnnots=false -dSAFER -dBATCH -dNOPAUSE -dCompatibilityLevel=1.4 "
+        $timeoutseconds = (int)get_config('assignfeedback_editpdf', 'gs_timeout');
+        $timeoutprefix = self::get_timeout_prefix($timeoutseconds);
+        $command = "{$timeoutprefix}{$gsexec} -q -sDEVICE=pdfwrite -dPreserveAnnots=false -dSAFER -dBATCH -dNOPAUSE -dCompatibilityLevel=1.4 "
             . "-sOutputFile=$tempdstarg $tempsrcarg";
 
-        exec($command);
+        $unusedoutput = [];
+        exec($command, $unusedoutput);
         if (!file_exists($tempdst)) {
             // Something has gone wrong in the conversion.
             return false;
@@ -760,6 +779,27 @@ class pdf extends Fpdi {
         }
 
         return $tempdst;
+    }
+
+    /**
+     * Returns the shell prefix to enforce a timeout on a command, or an empty
+     * string when the GNU timeout utility is unavailable (e.g. Windows).
+     *
+     * @param int $seconds Timeout in seconds. 0 means disabled.
+     * @return string E.g. "'/usr/bin/timeout' 120 " or "".
+     */
+    private static function get_timeout_prefix(int $seconds): string {
+        if ($seconds <= 0) {
+            return '';
+        }
+        // GNU timeout (coreutils) is available on Linux/macOS but not Windows.
+        // Check known installation paths using is_executable() — no shell spawn needed.
+        foreach (['/usr/bin/timeout', '/bin/timeout'] as $bin) {
+            if (is_executable($bin)) {
+                return \escapeshellarg($bin) . ' ' . (int)$seconds . ' ';
+            }
+        }
+        return '';
     }
 
     /**
