@@ -548,7 +548,12 @@ class pdf extends Fpdi {
 
         $imagefile = $this->imagefolder . '/' . self::IMAGE_PAGE;
         $command = $this->get_command_for_image(-1, $imagefile);
-        exec($command);
+        try {
+            self::run_gs($command, $this->filename);
+        } catch (\moodle_exception $e) {
+            // GS failed or timed out; the loop below will produce error images for all pages.
+            debugging($e->getMessage(), DEBUG_NORMAL);
+        }
         $images = array();
         for ($i = 0; $i < $this->pagecount; $i++) {
             // Image file is created from 1, so need to change to 0.
@@ -592,9 +597,15 @@ class pdf extends Fpdi {
 
         if ($generate) {
             $command = $this->get_command_for_image($pageno, $imagefile);
-            $output = null;
-            $result = exec($command, $output);
+            $output = [];
+            try {
+                self::run_gs($command, $this->filename, $output);
+            } catch (\moodle_exception $e) {
+                // Fall through to the file check below which generates a detailed error.
+                debugging($e->getMessage(), DEBUG_DEVELOPER);
+            }
             if (!file_exists($imagefile)) {
+                $result = !empty($output) ? end($output) : '';
                 $fullerror = '<pre>'.get_string('command', 'assignfeedback_editpdf')."\n";
                 $fullerror .= $command . "\n\n";
                 $fullerror .= get_string('result', 'assignfeedback_editpdf')."\n";
@@ -738,7 +749,11 @@ class pdf extends Fpdi {
         $command = "$gsexec -q -sDEVICE=pdfwrite -dPreserveAnnots=false -dSAFER -dBATCH -dNOPAUSE -dCompatibilityLevel=1.4 "
             . "-sOutputFile=$tempdstarg $tempsrcarg";
 
-        exec($command);
+        try {
+            self::run_gs($command, $tempsrc);
+        } catch (\moodle_exception $e) {
+            return false;
+        }
         if (!file_exists($tempdst)) {
             // Something has gone wrong in the conversion.
             return false;
@@ -760,6 +775,77 @@ class pdf extends Fpdi {
         }
 
         return $tempdst;
+    }
+
+    /**
+     * Runs a ghostscript command via proc_open, enforcing a timeout if configured.
+     *
+     * Uses proc_open rather than exec() so we can poll the process status and
+     * terminate it if it exceeds the configured gs_timeout limit, without
+     * relying on any external timeout utility.
+     *
+     * @param string $command The ghostscript shell command to execute.
+     * @param string $filename The PDF filename being processed, used in exception messages.
+     * @param array $output Populated with stdout lines on completion.
+     * @return void
+     * @throws \moodle_exception If proc_open fails, the process exceeds the configured gs_timeout,
+     *         or ghostscript exits with a non-zero status.
+     */
+    private static function run_gs(string $command, string $filename, array &$output = []): void {
+        $descriptorspec = [
+            0 => ['pipe', 'r'],
+            1 => ['pipe', 'w'],
+            2 => ['pipe', 'w'],
+        ];
+
+        $process = proc_open($command, $descriptorspec, $pipes);
+        if (!is_resource($process)) {
+            throw new \moodle_exception(
+                'errorgsfailed',
+                'assignfeedback_editpdf',
+                '',
+                (object)['file' => $filename],
+            );
+        }
+
+        fclose($pipes[0]);
+
+        $timeoutseconds = (int)get_config('assignfeedback_editpdf', 'gs_timeout');
+        $start = time();
+
+        while (proc_get_status($process)['running']) {
+            if ($timeoutseconds > 0 && (time() - $start) >= $timeoutseconds) {
+                proc_terminate($process);
+                fclose($pipes[1]);
+                fclose($pipes[2]);
+                proc_close($process);
+                throw new \moodle_exception(
+                    'errorgstimeout',
+                    'assignfeedback_editpdf',
+                    '',
+                    (object)['file' => $filename, 'timeout' => $timeoutseconds],
+                );
+            }
+            usleep(100000); // Poll every 100ms.
+        }
+
+        $stdout = stream_get_contents($pipes[1]);
+        fclose($pipes[1]);
+        // Read and discard stderr to prevent pipe buffer deadlocks.
+        stream_get_contents($pipes[2]);
+        fclose($pipes[2]);
+
+        $output = array_values(array_filter(explode("\n", trim($stdout)), fn($line) => $line !== ''));
+
+        $exitcode = proc_close($process);
+        if ($exitcode !== 0) {
+            throw new \moodle_exception(
+                'errorgsfailed',
+                'assignfeedback_editpdf',
+                '',
+                (object)['file' => $filename],
+            );
+        }
     }
 
     /**
