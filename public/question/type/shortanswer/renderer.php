@@ -46,7 +46,7 @@ class qtype_shortanswer_renderer extends qtype_renderer {
             'name' => $inputname,
             'value' => $currentanswer,
             'id' => $inputname,
-            'size' => 80,
+            'size' => 30,
             'class' => 'form-control d-inline',
         );
 
