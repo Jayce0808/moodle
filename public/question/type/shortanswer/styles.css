@@ -3,10 +3,6 @@
     display: inline;
 }
 
-.que.shortanswer .answer input {
-    width: 80%;
-}
-
 /* Editing form. */
 body#page-question-type-shortanswer div[id^=fgroup_id_][id*=answeroptions_] {
     background: #eee;
