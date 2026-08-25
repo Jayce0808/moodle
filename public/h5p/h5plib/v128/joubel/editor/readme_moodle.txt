@@ -32,3 +32,7 @@ Changed:
    upgrading the library).
  * Edit language/en.js and remove the content for 'filters' (it's a JSON with several fields, such as level or language).
  * Update the version of this library in thirdpartylibs.xml.
+ * In ns.findField (scripts/h5peditor.js), guard against a missing parent and return a safe
+   stub field (with a detached $item) instead of false when a field can't be found. This stops
+   3rd party widgets that blindly chain .$item.find(...) onto the result from crashing when
+   content was saved with an older semantics.json missing newer fields.
