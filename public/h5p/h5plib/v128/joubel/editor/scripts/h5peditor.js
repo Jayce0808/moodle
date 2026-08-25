@@ -662,7 +662,8 @@ ns.removeChildren = function (children) {
  *
  * @param {String} path
  * @param {Object} parent
- * @returns {@exp;ns.Form@call;findField|Boolean}
+ * @returns {@exp;ns.Form@call;findField|ns.missingField} Always an object; a
+ *   real field, or a safe stub from ns.missingField() when not found.
  */
 ns.findField = function (path, parent) {
   if (typeof path === 'string') {
@@ -671,9 +672,10 @@ ns.findField = function (path, parent) {
 
   if (path[0] === '..') {
     path.splice(0, 1);
-    return ns.findField(path, parent.parent);
+    // Guard against a missing parent instead of throwing.
+    return (parent && parent.parent) ? ns.findField(path, parent.parent) : ns.missingField();
   }
-  if (parent.children) {
+  if (parent && parent.children) {
     for (var i = 0; i < parent.children.length; i++) {
       if (parent.children[i].field.name === path[0]) {
         path.splice(0, 1);
@@ -687,7 +689,18 @@ ns.findField = function (path, parent) {
     }
   }
 
-  return false;
+  return ns.missingField();
+};
+
+/**
+ * Safe stand-in for a field that couldn't be found.
+ *
+ * @returns {Object}
+ */
+ns.missingField = function () {
+  return {
+    $item: ns.$('<div>').append('<input>')
+  };
 };
 
 /**
