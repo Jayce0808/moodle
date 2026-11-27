@@ -386,8 +386,12 @@ class block_activity_results extends block_base {
                             break;
                             default:
                             case B_ACTIVITYRESULTS_GRADE_FORMAT_PCT:
-                                $this->content->text .= $this->activity_format_grade((float)$averagegrade /
-                                        (float)$activity->grademax * 100).'%';
+                                if ((float)$activity->grademax) {
+                                    $this->content->text .= $this->activity_format_grade((float)$averagegrade /
+                                            (float)$activity->grademax * 100) . '%';
+                                } else {
+                                    $this->content->text .= '--%';
+                                }
                             break;
                         }
                         $this->content->text .= '</td></tr>';
@@ -442,8 +446,12 @@ class block_activity_results extends block_base {
                             break;
                             default:
                             case B_ACTIVITYRESULTS_GRADE_FORMAT_PCT:
-                                $this->content->text .= $this->activity_format_grade((float)$averagegrade /
-                                        (float)$activity->grademax * 100).'%';
+                                if ((float)$activity->grademax) {
+                                    $this->content->text .= $this->activity_format_grade((float)$averagegrade /
+                                            (float)$activity->grademax * 100) . '%';
+                                } else {
+                                    $this->content->text .= '--%';
+                                }
                             break;
                         }
                         $this->content->text .= '</td></tr>';
@@ -584,7 +592,7 @@ class block_activity_results extends block_base {
                             break;
                             default:
                             case B_ACTIVITYRESULTS_GRADE_FORMAT_PCT:
-                                if ($activity->grademax) {
+                                if ((float)$activity->grademax) {
                                     $this->content->text .= $this->activity_format_grade((float)$grades[$gradeid]->finalgrade /
                                             (float)$activity->grademax * 100).'%';
                                 } else {
@@ -650,7 +658,7 @@ class block_activity_results extends block_base {
                             break;
                             default:
                             case B_ACTIVITYRESULTS_GRADE_FORMAT_PCT:
-                                if ($activity->grademax) {
+                                if ((float)$activity->grademax) {
                                     $this->content->text .= $this->activity_format_grade((float)$grades[$gradeid]->finalgrade /
                                             (float)$activity->grademax * 100).'%';
                                 } else {
